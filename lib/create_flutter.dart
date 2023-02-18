@@ -1,44 +1,45 @@
-import 'package:create_flutter/questions/questions.dart';
+import 'package:create_flutter/classes/classes.dart';
+import 'package:create_flutter/i18n/i18n.dart';
 
-class Quiz {
-  List<Question> questions;
+void run() async {
+  final lang = I18n();
+  await lang.loadDictionaryFromJson();
 
-  Quiz(this.questions);
+  // print(lang.t("selectOne"));
 
-  start() {
-    var answers = [];
-    for (var question in questions) {
-      question.ask();
-      answers.add(question.getAnswer());
-    }
-
-    print(answers);
-  }
-}
-
-void run() {
   List<Question> questions = [
     TextQuestion(
-      question: 'What is your name?',
-      prefix: 'Name: ',
-      suffix: '!',
+      question: 'What is the app name?',
       transformer: (answer) => answer.toUpperCase(),
     ),
-    MultipleChoiceQuestion(
+    ChoiceQuestion.single(
       question: 'What is your favorite color?',
-      prefix: 'Color: ',
-      suffix: '!',
       options: ['red', 'green', 'blue'],
     ),
-    MultipleChoiceQuestion(
+    ChoiceQuestion.multiple(
       question: 'What is your favorite animal?',
-      prefix: 'Animal: ',
-      suffix: '!',
       options: ['dog', 'cat', 'bird'],
-      allowMultiple: true,
     ),
   ];
 
-  var quiz = Quiz(questions);
+  var quiz = Quiz(
+    onStart: (console) {
+      console.writeLine(r'''
+   _____                _         ______ _       _   _             
+  / ____|              | |       |  ____| |     | | | |            
+ | |     _ __ ___  __ _| |_ ___  | |__  | |_   _| |_| |_ ___ _ __  
+ | |    | '__/ _ \/ _` | __/ _ \ |  __| | | | | | __| __/ _ \ '__| 
+ | |____| | |  __/ (_| | ||  __/ | |    | | |_| | |_| ||  __/ |    
+  \_____|_|  \___|\__,_|\__\___| /\|    |_|\__,_|\__|\__\___|_|    
+                                /  \   _ __  _ __                  
+                               / /\ \ | '_ \| '_ \                 
+                              / ____ \| |_) | |_) |                
+                             /_/    \_\ .__/| .__/                 
+                                      | |   | |                    
+                                      |_|   |_|                    
+''');
+    },
+    questions: questions,
+  );
   quiz.start();
 }
