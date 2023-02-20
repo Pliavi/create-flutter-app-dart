@@ -10,29 +10,10 @@ And it will also be used to me to create a package to create this kind of CLI to
 
 ## Usage
 
-```dart
-void run() async {
-  final lang = I18n();
-  await lang.loadDictionaryFromJson();
+Just run the command `create-flutter-app` and follow the instructions:
 
-  List<Question> questions = [
-    TextQuestion(question: 'What is the app name?'),
-    TextQuestion(question: 'What is org name?'),
-    TextQuestion(question: 'What is the app description?'),
-  ];
-
-  var quiz = Quiz(
-    questions: questions,
-    onStart: (console) {
-      console.writeLine("Welcome to the Flutter App Creator");
-    },
-    onFinish: (console, answers) {
-      console.writeLine("Thanks for using the Flutter App Creator");
-    },
-  );
-
-  quiz.start();
-}
+```bash
+create-flutter-app
 ```
 
 ## Known issues
