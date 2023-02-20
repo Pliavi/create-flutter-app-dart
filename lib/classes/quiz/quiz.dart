@@ -6,25 +6,27 @@ class Quiz {
   Console get console => ConsoleSingleton.instance;
 
   final void Function(Console console)? onStart;
+  final void Function(List<List<String>> answers, Console console)? onFinish;
+
   final List<Question> questions;
+  List<List<String>> answers = [];
 
   Quiz({
     this.onStart,
+    this.onFinish,
     required this.questions,
   });
 
   start() {
-    console.hideCursor();
+    console.showCursor();
     onStart?.call(console);
 
-    var answers = [];
     for (var question in questions) {
-      question.showQuestion();
-      final answer = question.getAnswer();
-      answers.add(answer);
-      question.showAnswer(answer);
+      question.renderQuestionTemplate();
+      question.listenForAnswer();
+      answers.add(question.getRawAnswer());
     }
 
-    ConsoleSingleton.instance.writeLine(answers);
+    onFinish?.call(answers, console);
   }
 }

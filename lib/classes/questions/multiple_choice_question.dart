@@ -3,98 +3,125 @@ import 'package:create_flutter/classes/console_singleton.dart';
 import 'package:dart_console/dart_console.dart';
 
 class ChoiceQuestion extends Question {
-  final List<String> options;
+  final List<String> choices;
+
   final bool allowMultiple;
 
   ChoiceQuestion.multiple({
     required super.question,
     super.prefix,
     super.suffix = 'select multiples using comma (eg. 1,2)',
-    required this.options,
+    required this.choices,
   }) : allowMultiple = true;
 
   ChoiceQuestion.single({
     required super.question,
     super.prefix,
     super.suffix = 'select one only',
-    required this.options,
+    required this.choices,
   }) : allowMultiple = false;
 
   @override
-  int showQuestion() {
-    final questionLength = super.showQuestion();
-
-    var optionNumber = 1;
-    for (var option in options) {
-      console.writeLine('  $optionNumber. $option');
-      optionNumber++;
-    }
-
-    return questionLength;
+  String formatAnswer(List<String> rawAnswer) {
+    return rawAnswer.join(", ");
   }
 
   @override
-  String? validateAnswer(String? answer) {
-    if (answer == null || answer.isEmpty) {
-      return 'Answer cannot be empty';
-    }
+  void listenForAnswer() {
+    final rawAnswer = convertAnswerToList(read());
+    final error = validateAnswer(rawAnswer);
 
-    Set answerNumbers =
-        answer.split(',').map((option) => int.tryParse(option)).toSet();
-
-    if (answerNumbers.isEmpty || answerNumbers.contains(null)) {
-      return '$answer (must be a number)';
-    }
-
-    if (answerNumbers.length > 1 && !allowMultiple) {
-      return 'Only one answer is allowed';
-    }
-
-    if (!answerNumbers
-        .every((answer) => answer >= 1 && answer <= options.length)) {
-      return '$answer (must be between 1 and ${options.length})';
-    }
-
-    return null;
-  }
-
-  @override
-  List<String> getAnswer({
-    format,
-  }) {
-    while (true) {
-      final answer = (console.readLine() ?? "").trim();
-      final error = validateAnswer(answer);
-
-      if (error == null) {
-        return answer
-            .split(',')
-            .map((answer) {
-              final option = options.elementAt(int.tryParse(answer)! - 1);
-
-              return format?.call(option) ?? option;
-            })
-            .toSet()
-            .toList();
-      }
-
-      console.writeErrorLine('Invalid: $error');
+    if (error != null) {
+      onAnswerError(error);
+      listenForAnswer();
+    } else {
+      onValidAnswer(rawAnswer);
     }
   }
 
   @override
-  void showAnswer(answer) {
-    final optionsRows = options.length;
-    final cursorRow = console.cursorPosition!.row - 3 - optionsRows;
+  onAnswerError(error) => renderErrorTemplate(error);
 
-    console.cursorPosition = Coordinate(cursorRow, 0);
+  @override
+  void onValidAnswer(List<String> rawAnswer) {
+    this.rawAnswer = rawAnswer;
+    renderOnAnswerTemplate(rawAnswer);
+  }
 
-    final questionLength = showQuestion();
+  @override
+  void renderErrorTemplate(String error) {
+    clearQuestion();
+    renderQuestionTemplate();
+    pushLine();
+    writeError(error);
+    moveOrSetCursor(
+      byRows: -1,
+      setCol: 0,
+    );
+  }
 
-    console.cursorPosition = Coordinate(cursorRow, questionLength);
-
+  @override
+  void renderOnAnswerTemplate(List<String> rawAnswer) {
+    clearQuestion();
+    renderQuestionLine();
+    moveOrSetCursor(
+      byRows: -1,
+      setCol: prefix.length + question.length + 2,
+    );
     console.eraseCursorToEnd();
-    console.write(" ${answer.join(',')}");
-    console.writeLine();
+    writeHint(rawAnswer.join(", "));
+
+    pushLine();
+  }
+
+  @override
+  void renderQuestionTemplate() {
+    renderQuestionLine();
+    for (var i = 0; i < choices.length; i++) {
+      write('  ');
+      console.setForegroundColor(ConsoleColor.brightBlack);
+      write((i + 1).toString());
+      write(') ');
+      console.resetColorAttributes();
+      write(choices[i]);
+      pushLine();
+    }
+  }
+
+  void renderQuestionLine() {
+    console.setForegroundColor(ConsoleColor.brightBlack);
+    write(prefix);
+    console.resetColorAttributes();
+    write(' ');
+    write(question);
+    write(' ');
+    console.setForegroundColor(ConsoleColor.brightBlack);
+    write(suffix);
+    console.resetColorAttributes();
+    pushLine();
+  }
+
+  @override
+  List<String> convertAnswerToList(String? answer) {
+    final answers = super.convertAnswerToList(answer);
+
+    return answers
+        .map((answer) {
+          final number = int.tryParse(answer);
+          final isPositiveNumber = (number != null && number > 0);
+          final isChoiceIndex = (isPositiveNumber && number <= choices.length);
+
+          return (isChoiceIndex) ? choices[number - 1] : null;
+        })
+        .where((answer) => answer != null)
+        .toList()
+        .cast();
+  }
+
+  @override
+  validateAnswer(rawAnswer) {
+    return (rawAnswer == null || rawAnswer.isEmpty)
+        ? "Answer cannot be empty"
+        : null;
   }
 }

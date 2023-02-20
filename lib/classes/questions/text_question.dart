@@ -1,54 +1,91 @@
 import 'package:create_flutter/classes/classes.dart';
 import 'package:create_flutter/classes/console_singleton.dart';
+import 'package:dart_console/dart_console.dart';
 
 class TextQuestion extends Question {
-  final FormatterFunction? transformer;
-
   TextQuestion({
     required super.question,
     super.prefix,
     super.suffix,
-    this.transformer,
   });
 
   @override
-  String? validateAnswer(String answer) {
-    if (answer.isEmpty) {
-      return 'Answer cannot be empty';
-    }
-
-    return null;
+  formatAnswer(rawAnswer) {
+    return rawAnswer.join("");
   }
 
   @override
-  List<String> getAnswer({
-    format,
-  }) {
-    while (true) {
-      final answer = (console.readLine() ?? "").trim();
-      final error = validateAnswer(answer);
-      final formattedAnswer = format?.call(answer) ?? answer;
+  List<String> convertAnswerToList(String? answer) {
+    if (answer == null) return [];
 
-      if (error == null) {
-        return [formattedAnswer];
-      }
+    return [answer.trim()];
+  }
 
-      console.writeErrorLine('Invalid: $error');
+  @override
+  listenForAnswer() {
+    final rawAnswer = convertAnswerToList(read());
+    final error = validateAnswer(rawAnswer);
+
+    if (error != null) {
+      onAnswerError(error);
+      listenForAnswer();
+    } else {
+      onValidAnswer(rawAnswer);
     }
   }
 
   @override
-  void showAnswer(answer) {
-    final cursorRow = console.cursorPosition!.row - 2;
+  onValidAnswer(rawAnswer) {
+    this.rawAnswer = rawAnswer;
+    renderOnAnswerTemplate(rawAnswer);
+  }
 
-    console.cursorPosition = Coordinate(cursorRow, 0);
+  @override
+  onAnswerError(error) => renderErrorTemplate(error);
 
-    final questionLength = showQuestion();
+  @override
+  renderErrorTemplate(error) {
+    clearQuestion();
+    renderQuestionTemplate();
+    pushLine();
+    writeError(error);
+    moveOrSetCursor(
+      byRows: -1,
+      setCol: 0,
+    );
+  }
 
-    console.cursorPosition = Coordinate(cursorRow, questionLength);
-
+  @override
+  renderOnAnswerTemplate(answer) {
+    clearQuestion();
+    renderQuestionTemplate();
+    moveOrSetCursor(
+      byRows: -1,
+      setCol: prefix.length + question.length + 2,
+    );
     console.eraseCursorToEnd();
-    console.write(" " + answer.join(','));
-    console.writeLine();
+    writeHint(answer.first);
+    pushLine();
+  }
+
+  @override
+  renderQuestionTemplate() {
+    console.setForegroundColor(ConsoleColor.brightBlack);
+    write(prefix);
+    console.resetColorAttributes();
+    write(' ');
+    write(question);
+    write(' ');
+    console.setForegroundColor(ConsoleColor.brightBlack);
+    write(suffix);
+    console.resetColorAttributes();
+    pushLine();
+  }
+
+  @override
+  validateAnswer(rawAnswer) {
+    return (rawAnswer == null || rawAnswer.isEmpty || rawAnswer.first.isEmpty)
+        ? "Answer cannot be empty"
+        : null;
   }
 }
