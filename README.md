@@ -1,6 +1,10 @@
 # Create Flutter App
 
-This is a CLI tool to enforce a good startup for a Flutter project.
+This is a CLI tool to enforce a good startup structure for a Flutter project.
+
+<center>
+  <video autoplay loop width="300" src="https://user-images.githubusercontent.com/5985423/220680524-fea4bfec-d981-43df-aa15-5b39de0ffd14.mp4"></video>
+</center>
 
 This is based on [a video I watched in Youtube][youtubevideo] talking about how this simple things like setting the app name, org name, platforms and other things can be important for someone who is showing the app in an interview.
 
